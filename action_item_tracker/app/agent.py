@@ -78,6 +78,8 @@ file_summarizer_agent = Agent(
         add_action_item,
         list_action_items,
         read_meeting_loop_file,
+        check_user_scanning_preference,
+        update_user_scanning_preference,
     ],
 )
 
@@ -96,7 +98,8 @@ root_agent = Agent(
         "2. Add action item: Call `add_action_item` to create items.\n"
         "3. Update action item: Call `update_action_item` with the item_id (e.g. 'item-001') and fields to update (status, due_date, description, owner, category, priority, visibility).\n"
         "4. Delete action item: Call `delete_action_item` with the item_id (e.g. 'item-001' or 'item-5cb30f') to delete an action item from Firestore.\n"
-        "5. Parse & import email: Call `parse_and_import_email` or `summarize_file_and_create_action_items` for emails and .loop files.\n\n"
+        "5. Parse & import email: Call `parse_and_import_email` or `summarize_file_and_create_action_items` for emails and .loop files.\n"
+        "6. Scanning Preferences: Call `check_user_scanning_preference` or `update_user_scanning_preference` to view or change opt-in/opt-out preferences for automatic email or meeting notes scanning.\n\n"
         "CRITICAL INSTRUCTIONS FOR MODIFICATIONS & DELETIONS:\n"
         "- When asked to update or delete an item, if you do not know the exact item_id, call `list_action_items` first to find the target item_id!\n"
         "- ALWAYS call the `update_action_item` or `delete_action_item` tool when requested to modify or delete an item.\n"
@@ -113,6 +116,8 @@ root_agent = Agent(
         parse_and_import_email,
         summarize_file_and_create_action_items,
         read_meeting_loop_file,
+        check_user_scanning_preference,
+        update_user_scanning_preference,
         get_current_time,
         PreloadMemoryTool(),
     ],

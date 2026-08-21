@@ -458,3 +458,69 @@ def get_audit_logs(requester_user: str, limit: int = 100) -> list:
 
     logs.sort(key=lambda x: x.get("timestamp_iso", ""), reverse=True)
     return logs[:limit]
+
+
+def check_user_scanning_preference(user_id: str = "global_default", scan_type: str = "emails") -> str:
+    """Checks whether a user has opted in or opted out of automatic scanning for emails or meeting notes.
+
+    Args:
+        user_id: The username or user identifier to check (e.g. 'Alice', 'Bob', 'global_default').
+        scan_type: The scanning type to check: 'emails' or 'meeting_notes'.
+
+    Returns:
+        Formatted string stating whether auto-scanning is ENABLED (Opted-in) or DISABLED (Opted-out) for the user.
+    """
+    db = get_firestore_client()
+    clean_user = (user_id or "global_default").strip().lower()
+    doc_ref = db.collection("user_preferences").document(clean_user)
+    doc = doc_ref.get()
+
+    if not doc.exists:
+        return f"User '{user_id}' currently has default scanning preferences: Automatic email scanning is ENABLED, Automatic meeting notes scanning is ENABLED."
+
+    prefs = doc.to_dict()
+    emails_enabled = prefs.get("auto_scan_emails", True)
+    notes_enabled = prefs.get("auto_scan_meeting_notes", True)
+
+    if scan_type == "meeting_notes":
+        state = "ENABLED (Opted-In)" if notes_enabled else "DISABLED (Opted-Out)"
+        return f"Automatic meeting notes scanning for user '{user_id}' is {state}."
+    else:
+        state = "ENABLED (Opted-In)" if emails_enabled else "DISABLED (Opted-Out)"
+        return f"Automatic email scanning for user '{user_id}' is {state}."
+
+
+def update_user_scanning_preference(user_id: str = "global_default", auto_scan_emails: bool = True, auto_scan_meeting_notes: bool = True) -> str:
+    """Updates a user's opt-in / opt-out preferences for automatic email and meeting notes scanning.
+
+    Args:
+        user_id: The username to update (e.g. 'Alice', 'Bob', 'global_default').
+        auto_scan_emails: Set True to opt in to automatic email scanning, False to opt out.
+        auto_scan_meeting_notes: Set True to opt in to automatic meeting notes (.loop) scanning, False to opt out.
+
+    Returns:
+        Confirmation message detailing the updated preference settings.
+    """
+    db = get_firestore_client()
+    clean_user = (user_id or "global_default").strip().lower()
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    prefs_data = {
+        "user_id": clean_user,
+        "auto_scan_emails": auto_scan_emails,
+        "auto_scan_meeting_notes": auto_scan_meeting_notes,
+        "updated_at": now_iso,
+        "updated_by": "AI Assistant Chat",
+    }
+    db.collection("user_preferences").document(clean_user).set(prefs_data)
+
+    email_status = "ENABLED (Opted-In)" if auto_scan_emails else "DISABLED (Opted-Out)"
+    notes_status = "ENABLED (Opted-In)" if auto_scan_meeting_notes else "DISABLED (Opted-Out)"
+
+    log_audit_event(
+        user=user_id,
+        event_type="USER_PREFERENCES_UPDATED",
+        details=f"Updated preferences via AI Agent: Emails {email_status}, Notes {notes_status}"
+    )
+
+    return f"Successfully updated scanning preferences for user '{user_id}':\n- Automatic Email Scanning: {email_status}\n- Automatic Meeting Notes Scanning: {notes_status}"

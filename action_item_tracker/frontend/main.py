@@ -597,6 +597,75 @@ async def delete_action_item_api(req: Request):
         return JSONResponse({"status": "error", "message": f"Item '{item_id}' not found"}, status_code=404)
 
 
+PREFERENCES_COLLECTION_NAME = "user_preferences"
+
+
+def get_user_preferences_from_db(user_id: str) -> dict:
+    from google.cloud import firestore
+
+    clean_user = (user_id or "global_default").strip().lower()
+    if not clean_user:
+        clean_user = "global_default"
+
+    db = firestore.Client(project=FIRESTORE_PROJECT)
+    doc_ref = db.collection(PREFERENCES_COLLECTION_NAME).document(clean_user)
+    doc = doc_ref.get()
+
+    if doc.exists:
+        return doc.to_dict()
+
+    return {
+        "user_id": clean_user,
+        "auto_scan_emails": True,
+        "auto_scan_meeting_notes": True,
+        "updated_at": None,
+        "updated_by": "system",
+    }
+
+
+@app.get("/api/user_preferences")
+async def get_user_preferences_api(user: str = "global_default"):
+    try:
+        prefs = get_user_preferences_from_db(user)
+        return JSONResponse({"status": "success", "preferences": prefs})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@app.post("/api/user_preferences/update")
+async def update_user_preferences_api(req: Request):
+    import datetime
+    from google.cloud import firestore
+
+    body = await req.json()
+    user_id = (body.get("user_id") or "global_default").strip().lower()
+    auto_scan_emails = bool(body.get("auto_scan_emails", True))
+    auto_scan_meeting_notes = bool(body.get("auto_scan_meeting_notes", True))
+    updated_by = body.get("updated_by") or body.get("user") or "User"
+
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    prefs_data = {
+        "user_id": user_id,
+        "auto_scan_emails": auto_scan_emails,
+        "auto_scan_meeting_notes": auto_scan_meeting_notes,
+        "updated_at": now_iso,
+        "updated_by": updated_by,
+    }
+
+    db = firestore.Client(project=FIRESTORE_PROJECT)
+    db.collection(PREFERENCES_COLLECTION_NAME).document(user_id).set(prefs_data)
+
+    status_str = f"Emails: {'ON' if auto_scan_emails else 'OFF'}, Notes: {'ON' if auto_scan_meeting_notes else 'OFF'}"
+    log_audit_event(
+        user=updated_by,
+        event_type="USER_PREFERENCES_UPDATED",
+        details=f"Updated scanning preferences for '{user_id}': {status_str}",
+    )
+
+    return JSONResponse({"status": "success", "preferences": prefs_data})
+
+
 @app.post("/api/audit_logs/log_access")
 async def log_access_api(req: Request):
     body = await req.json()

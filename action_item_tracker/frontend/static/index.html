@@ -299,6 +299,35 @@
     font-weight: 700;
   }
 
+  /* Custom Toggle Switch for Preferences */
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(148, 163, 184, 0.3);
+    transition: .3s;
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+  }
+  input:checked + .toggle-slider {
+    background-color: #8b5cf6;
+    border-color: #a78bfa;
+  }
+  input:checked + .toggle-slider:before {
+    transform: translateX(22px);
+  }
+
   /* Items Grid */
   .items-grid {
     display: grid;
@@ -867,6 +896,9 @@
       <option value="all" style="background: #0f172a; color: #fff;">🌐 All Users</option>
       <option value="Admin" style="background: #0f172a; color: #fbbf24; font-weight: bold;">🛡️ Admin (System Audit Access)</option>
     </select>
+    <button id="userPreferencesBtn" onclick="openPreferencesModal()" style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c084fc; padding: 0.2rem 0.61rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;" title="Manage Opt-In / Opt-Out Auto-Scanning Preferences">
+      <span class="material-symbols-outlined" style="font-size: 14px;">settings</span> Auto-Scan Opt-In
+    </button>
     <button id="adminAuditBtn" onclick="openAuditLogsModal()" style="display: none; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; padding: 0.2rem 0.61rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer; align-items: center; gap: 0.3rem;">
       <span class="material-symbols-outlined" style="font-size: 14px;">shield</span> Audit Logs
     </button>
@@ -1161,6 +1193,68 @@
   </div>
 </div>
 
+<!-- Modal: User Opt-In / Opt-Out Scanning Preferences -->
+<div id="preferencesModal" class="modal-overlay">
+  <div class="modal" style="max-width: 550px;">
+    <div class="modal-header">
+      <h3 style="display: flex; align-items: center; gap: 0.5rem; color: #c084fc;">
+        <span class="material-symbols-outlined" style="color: #c084fc;">settings</span>
+        Auto-Scanning Opt-In / Opt-Out Settings
+      </h3>
+      <button class="btn-close" onclick="closePreferencesModal()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+      Configure automatic background scanning and extraction of action items for user: <strong id="prefTargetUserLabel" style="color: #38bdf8;">Global Default</strong>
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <!-- Toggle 1: Email Scanning -->
+      <div style="background: rgba(15, 23, 42, 0.6); padding: 0.9rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 700; color: #fff; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span class="material-symbols-outlined" style="color: #60a5fa; font-size: 18px;">mail</span>
+            Automatic Email Scanning
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Automatically extract action items from facilitator emails & syncs.
+          </div>
+        </div>
+        <label style="position: relative; display: inline-block; width: 46px; height: 24px;">
+          <input type="checkbox" id="prefAutoScanEmails" style="opacity: 0; width: 0; height: 0;">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Toggle 2: Meeting Notes Scanning -->
+      <div style="background: rgba(15, 23, 42, 0.6); padding: 0.9rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 700; color: #fff; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span class="material-symbols-outlined" style="color: #a78bfa; font-size: 18px;">description</span>
+            Automatic Meeting Notes (.loop) Scanning
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Automatically extract action items from uploaded meeting files.
+          </div>
+        </div>
+        <label style="position: relative; display: inline-block; width: 46px; height: 24px;">
+          <input type="checkbox" id="prefAutoScanNotes" style="opacity: 0; width: 0; height: 0;">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.08);">
+      <button class="tab-btn" onclick="closePreferencesModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveUserPreferences()" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);">
+        <span class="material-symbols-outlined">save</span> Save Preferences
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast">Changes saved!</div>
 
 <script>
@@ -1316,10 +1410,97 @@ function checkAdminView() {
 
 function onCurrentUserChange() {
   checkAdminView();
+  checkUserPreferencesForCurrent();
   const userSelect = document.getElementById("currentUserSelect");
   const val = userSelect ? userSelect.value : "all";
   logWebsiteAccess("SESSION_SWITCH", `Switched profile session to ${val}`);
   filterItems();
+}
+
+async function checkUserPreferencesForCurrent() {
+  const userSelect = document.getElementById("currentUserSelect");
+  const selectedUser = userSelect ? userSelect.value : "global_default";
+  try {
+    const res = await fetch(`/api/user_preferences?user=${encodeURIComponent(selectedUser)}`);
+    const data = await res.json();
+    if (data.status === "success" && data.preferences) {
+      const isEnabled = (data.preferences.auto_scan_emails !== false) && (data.preferences.auto_scan_meeting_notes !== false);
+      updatePreferenceBadgeIndicator(isEnabled);
+    }
+  } catch (e) {
+    console.error("Failed to check user preferences:", e);
+  }
+}
+
+async function openPreferencesModal() {
+  const userSelect = document.getElementById("currentUserSelect");
+  const selectedUser = userSelect ? userSelect.value : "global_default";
+  const displayUser = selectedUser === "all" ? "Global Default (All Users)" : selectedUser;
+
+  document.getElementById("prefTargetUserLabel").textContent = displayUser;
+  document.getElementById("preferencesModal").classList.add("active");
+
+  try {
+    const res = await fetch(`/api/user_preferences?user=${encodeURIComponent(selectedUser)}`);
+    const data = await res.json();
+    if (data.status === "success" && data.preferences) {
+      document.getElementById("prefAutoScanEmails").checked = data.preferences.auto_scan_emails !== false;
+      document.getElementById("prefAutoScanNotes").checked = data.preferences.auto_scan_meeting_notes !== false;
+    }
+  } catch (err) {
+    console.error("Error fetching preferences:", err);
+  }
+}
+
+function closePreferencesModal() {
+  document.getElementById("preferencesModal").classList.remove("active");
+}
+
+async function saveUserPreferences() {
+  const userSelect = document.getElementById("currentUserSelect");
+  const selectedUser = userSelect ? userSelect.value : "global_default";
+
+  const autoScanEmails = document.getElementById("prefAutoScanEmails").checked;
+  const autoScanNotes = document.getElementById("prefAutoScanNotes").checked;
+
+  try {
+    const res = await fetch("/api/user_preferences/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: selectedUser,
+        auto_scan_emails: autoScanEmails,
+        auto_scan_meeting_notes: autoScanNotes,
+        updated_by: selectedUser === "all" ? "Admin" : selectedUser
+      })
+    });
+    const data = await res.json();
+    if (data.status === "success") {
+      showToast(`Saved scanning preferences for ${selectedUser}!`);
+      closePreferencesModal();
+      updatePreferenceBadgeIndicator(autoScanEmails && autoScanNotes);
+    } else {
+      alert(`Error saving preferences: ${data.message || 'Unknown error'}`);
+    }
+  } catch (err) {
+    alert(`Failed to save preferences: ${err.message}`);
+  }
+}
+
+function updatePreferenceBadgeIndicator(allEnabled) {
+  const prefBtn = document.getElementById("userPreferencesBtn");
+  if (!prefBtn) return;
+  if (allEnabled) {
+    prefBtn.style.background = "rgba(16, 185, 129, 0.2)";
+    prefBtn.style.borderColor = "rgba(16, 185, 129, 0.4)";
+    prefBtn.style.color = "#34d399";
+    prefBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 14px;">check_circle</span> Auto-Scan ON';
+  } else {
+    prefBtn.style.background = "rgba(245, 158, 11, 0.2)";
+    prefBtn.style.borderColor = "rgba(245, 158, 11, 0.4)";
+    prefBtn.style.color = "#fbbf24";
+    prefBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 14px;">pause_circle</span> Auto-Scan Paused';
+  }
 }
 
 async function logWebsiteAccess(eventType = "WEBSITE_ACCESS", details = "Website accessed") {
