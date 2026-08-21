@@ -616,8 +616,8 @@ def get_user_preferences_from_db(user_id: str) -> dict:
 
     return {
         "user_id": clean_user,
-        "auto_scan_emails": True,
-        "auto_scan_meeting_notes": True,
+        "auto_scan_emails": False,
+        "auto_scan_meeting_notes": False,
         "updated_at": None,
         "updated_by": "system",
     }
@@ -639,8 +639,8 @@ async def update_user_preferences_api(req: Request):
 
     body = await req.json()
     user_id = (body.get("user_id") or "global_default").strip().lower()
-    auto_scan_emails = bool(body.get("auto_scan_emails", True))
-    auto_scan_meeting_notes = bool(body.get("auto_scan_meeting_notes", True))
+    auto_scan_emails = bool(body.get("auto_scan_emails", False))
+    auto_scan_meeting_notes = bool(body.get("auto_scan_meeting_notes", False))
     updated_by = body.get("updated_by") or body.get("user") or "User"
 
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()

@@ -476,11 +476,11 @@ def check_user_scanning_preference(user_id: str = "global_default", scan_type: s
     doc = doc_ref.get()
 
     if not doc.exists:
-        return f"User '{user_id}' currently has default scanning preferences: Automatic email scanning is ENABLED, Automatic meeting notes scanning is ENABLED."
+        return f"User '{user_id}' currently has default scanning preferences: Automatic email scanning is DISABLED (Opted-Out by default), Automatic meeting notes scanning is DISABLED (Opted-Out by default)."
 
     prefs = doc.to_dict()
-    emails_enabled = prefs.get("auto_scan_emails", True)
-    notes_enabled = prefs.get("auto_scan_meeting_notes", True)
+    emails_enabled = prefs.get("auto_scan_emails", False)
+    notes_enabled = prefs.get("auto_scan_meeting_notes", False)
 
     if scan_type == "meeting_notes":
         state = "ENABLED (Opted-In)" if notes_enabled else "DISABLED (Opted-Out)"
@@ -490,7 +490,7 @@ def check_user_scanning_preference(user_id: str = "global_default", scan_type: s
         return f"Automatic email scanning for user '{user_id}' is {state}."
 
 
-def update_user_scanning_preference(user_id: str = "global_default", auto_scan_emails: bool = True, auto_scan_meeting_notes: bool = True) -> str:
+def update_user_scanning_preference(user_id: str = "global_default", auto_scan_emails: bool = False, auto_scan_meeting_notes: bool = False) -> str:
     """Updates a user's opt-in / opt-out preferences for automatic email and meeting notes scanning.
 
     Args:

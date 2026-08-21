@@ -1424,7 +1424,7 @@ async function checkUserPreferencesForCurrent() {
     const res = await fetch(`/api/user_preferences?user=${encodeURIComponent(selectedUser)}`);
     const data = await res.json();
     if (data.status === "success" && data.preferences) {
-      const isEnabled = (data.preferences.auto_scan_emails !== false) && (data.preferences.auto_scan_meeting_notes !== false);
+      const isEnabled = (data.preferences.auto_scan_emails === true) && (data.preferences.auto_scan_meeting_notes === true);
       updatePreferenceBadgeIndicator(isEnabled);
     }
   } catch (e) {
@@ -1444,8 +1444,8 @@ async function openPreferencesModal() {
     const res = await fetch(`/api/user_preferences?user=${encodeURIComponent(selectedUser)}`);
     const data = await res.json();
     if (data.status === "success" && data.preferences) {
-      document.getElementById("prefAutoScanEmails").checked = data.preferences.auto_scan_emails !== false;
-      document.getElementById("prefAutoScanNotes").checked = data.preferences.auto_scan_meeting_notes !== false;
+      document.getElementById("prefAutoScanEmails").checked = data.preferences.auto_scan_emails === true;
+      document.getElementById("prefAutoScanNotes").checked = data.preferences.auto_scan_meeting_notes === true;
     }
   } catch (err) {
     console.error("Error fetching preferences:", err);
