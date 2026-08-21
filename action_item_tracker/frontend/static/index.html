@@ -413,6 +413,39 @@
     border-radius: 6px;
   }
 
+  .vis-badge-select {
+    border-radius: 8px;
+    padding: 0.25rem 0.55rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .vis-badge-select.vis-company_wide {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+  }
+  .vis-badge-select.vis-restricted_assignee {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+  }
+  .vis-badge-select.vis-restricted_user {
+    background: rgba(139, 92, 246, 0.25);
+    color: #c084fc;
+    border: 1px solid rgba(139, 92, 246, 0.45);
+  }
+  .vis-badge-select option {
+    background: #0f172a;
+    color: #fff;
+    font-weight: 600;
+  }
+
   .item-desc-input {
     background: rgba(15, 23, 42, 0.4);
     border: 1px solid var(--card-border);
@@ -872,6 +905,17 @@
           </select>
         </div>
 
+        <div style="display: flex; align-items: center; gap: 0.4rem; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); padding: 0.35rem 0.65rem; border-radius: 8px;">
+          <span class="material-symbols-outlined" style="font-size: 16px; color: #c084fc;">shield</span>
+          <span style="font-size: 0.8rem; font-weight: 600; color: #cbd5e1; white-space: nowrap;">Permission Level:</span>
+          <select id="visibilityFilter" class="filter-select" onchange="filterItems()" style="border: none; background: transparent; padding-left: 0.3rem; font-weight: 600; color: #e9d5ff; cursor: pointer;">
+            <option value="all" style="background: #0f172a; color: #fff;">🛡️ All Permissions</option>
+            <option value="company_wide" style="background: #0f172a; color: #34d399;">🏢 Company Wide</option>
+            <option value="restricted_assignee" style="background: #0f172a; color: #fbbf24;">👥 Restricted to Assignee</option>
+            <option value="restricted_user" style="background: #0f172a; color: #c084fc;">🔒 Restricted to User</option>
+          </select>
+        </div>
+
         <div class="view-toggle">
           <button class="toggle-btn active" id="view-grid-btn" onclick="setViewGrouping('grid')">
             <span class="material-symbols-outlined" style="font-size: 16px;">grid_view</span>
@@ -1030,12 +1074,15 @@
         <input type="text" id="newSource" class="form-control" placeholder="e.g. Email / Facilitator sync">
       </div>
 
-      <div class="form-group">
-        <label>Visibility & Access Permissions</label>
-        <select id="newVisibility" class="form-control" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; font-weight: 600;">
-          <option value="company_wide" selected>🏢 Company Wide (Visible to Everyone)</option>
-          <option value="restricted_assignee">👥 Restricted to Assignee(s)</option>
-          <option value="restricted_user">🔒 Restricted to User</option>
+      <div class="form-group" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); padding: 0.75rem; border-radius: 10px;">
+        <label style="color: #c084fc; font-weight: 700; display: flex; align-items: center; gap: 0.3rem;">
+          <span class="material-symbols-outlined" style="font-size: 16px;">shield</span>
+          Permission Level & Access Control
+        </label>
+        <select id="newVisibility" class="form-control" style="background: rgba(15, 23, 42, 0.8); color: #e9d5ff; font-weight: 700; border: 1px solid rgba(139, 92, 246, 0.4); margin-top: 0.3rem;">
+          <option value="company_wide" selected>🏢 Company Wide (Visible to Everyone across organization)</option>
+          <option value="restricted_assignee">👥 Restricted to Assignee (Visible only to tagged assignees & admins)</option>
+          <option value="restricted_user">🔒 Restricted to User (Visible only to creator/owner & admins)</option>
         </select>
       </div>
 
@@ -1444,6 +1491,7 @@ function setViewGrouping(groupMode) {
 function filterItems() {
   const search = document.getElementById("searchInput").value.toLowerCase();
   const selectedCat = document.getElementById("categoryFilter").value;
+  const selectedVis = document.getElementById("visibilityFilter") ? document.getElementById("visibilityFilter").value : "all";
   const currentUser = (document.getElementById("currentUserSelect") ? document.getElementById("currentUserSelect").value : "all").toLowerCase();
   const todayStr = getTodayString();
 
@@ -1466,6 +1514,7 @@ function filterItems() {
                         (item.category || "").toLowerCase().includes(search);
     
     const matchCat = selectedCat === "all" || item.category === selectedCat;
+    const matchVis = selectedVis === "all" || vis === selectedVis;
 
     let matchFilter = true;
     if (currentFilter === "scoped_pending") {
@@ -1479,7 +1528,7 @@ function filterItems() {
       matchFilter = item.status === currentFilter;
     }
 
-    return matchSearch && matchCat && matchFilter;
+    return matchSearch && matchCat && matchVis && matchFilter;
   });
 
   renderBoard(filtered);
@@ -1577,14 +1626,16 @@ function renderItemsGrid(items, container) {
 
     const catBadgeHtml = `<span class="category-pill"><span class="material-symbols-outlined" style="font-size: 14px;">label</span> ${escapeHtml(item.category || 'General')}</span>`;
     const vis = item.visibility || "company_wide";
-    let visBadgeHtml = "";
-    if (vis === "company_wide") {
-      visBadgeHtml = `<span class="category-pill" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);"><span class="material-symbols-outlined" style="font-size: 13px;">domain</span> Company Wide</span>`;
-    } else if (vis === "restricted_assignee") {
-      visBadgeHtml = `<span class="category-pill" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);"><span class="material-symbols-outlined" style="font-size: 13px;">group</span> Restricted to Assignee</span>`;
-    } else {
-      visBadgeHtml = `<span class="category-pill" style="background: rgba(139, 92, 246, 0.25); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);"><span class="material-symbols-outlined" style="font-size: 13px;">lock</span> Restricted to User</span>`;
-    }
+    const visBadgeControlHtml = `
+      <div style="display: inline-flex; align-items: center; gap: 0.25rem; margin-left: auto;">
+        <span style="font-size: 0.7rem; font-weight: 700; color: #a78bfa; text-transform: uppercase;">Permission:</span>
+        <select id="cardVis-${item.id}" class="vis-badge-select vis-${vis}" onchange="quickUpdateVisibility('${item.id}', this.value)" title="Change Permission Level">
+          <option value="company_wide" ${vis === 'company_wide' ? 'selected' : ''}>🏢 Company Wide</option>
+          <option value="restricted_assignee" ${vis === 'restricted_assignee' ? 'selected' : ''}>👥 Restricted to Assignee</option>
+          <option value="restricted_user" ${vis === 'restricted_user' ? 'selected' : ''}>🔒 Restricted to User</option>
+        </select>
+      </div>
+    `;
 
     const rawOwners = (item.owner || "Unassigned").split(",").map(u => u.trim()).filter(u => u && u !== "Unassigned");
     const userChipsHtml = rawOwners.length > 0
@@ -1614,7 +1665,7 @@ function renderItemsGrid(items, container) {
       <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
         ${catBadgeHtml}
         ${badgeHtml}
-        ${visBadgeHtml}
+        ${visBadgeControlHtml}
       </div>
 
       <textarea class="item-desc-input" id="desc-${item.id}" placeholder="Description">${escapeHtml(item.description || '')}</textarea>
@@ -1648,20 +1699,25 @@ function renderItemsGrid(items, container) {
           <input type="date" class="meta-input" id="due-${item.id}" value="${item.due_date || ''}">
         </div>
 
-        <div class="meta-field" style="grid-column: span 2;">
-          <span class="meta-label">Priority & Visibility Scope</span>
-          <div style="display: flex; gap: 0.3rem;">
-            <select class="meta-input" id="priority-${item.id}" style="flex: 1;">
-              <option value="High" ${item.priority === 'High' ? 'selected' : ''}>High</option>
-              <option value="Medium" ${item.priority === 'Medium' || !item.priority ? 'selected' : ''}>Medium</option>
-              <option value="Low" ${item.priority === 'Low' ? 'selected' : ''}>Low</option>
-            </select>
-            <select class="meta-input" id="visibility-${item.id}" style="flex: 1.5; background: rgba(139, 92, 246, 0.15); color: #c084fc; font-weight: 600;">
-              <option value="company_wide" ${vis === 'company_wide' ? 'selected' : ''}>🏢 Company Wide</option>
-              <option value="restricted_assignee" ${vis === 'restricted_assignee' ? 'selected' : ''}>👥 Restricted to Assignee</option>
-              <option value="restricted_user" ${vis === 'restricted_user' ? 'selected' : ''}>🔒 Restricted to User</option>
-            </select>
-          </div>
+        <div class="meta-field">
+          <span class="meta-label">Priority</span>
+          <select class="meta-input" id="priority-${item.id}">
+            <option value="High" ${item.priority === 'High' ? 'selected' : ''}>High</option>
+            <option value="Medium" ${item.priority === 'Medium' || !item.priority ? 'selected' : ''}>Medium</option>
+            <option value="Low" ${item.priority === 'Low' ? 'selected' : ''}>Low</option>
+          </select>
+        </div>
+
+        <div class="meta-field">
+          <span class="meta-label" style="color: #c084fc; display: flex; align-items: center; gap: 0.2rem;">
+            <span class="material-symbols-outlined" style="font-size: 13px;">shield</span>
+            Permission
+          </span>
+          <select class="meta-input" id="visibility-${item.id}" onchange="quickUpdateVisibility('${item.id}', this.value)" style="background: rgba(139, 92, 246, 0.2); color: #e9d5ff; font-weight: 700; border: 1px solid rgba(139, 92, 246, 0.45);">
+            <option value="company_wide" ${vis === 'company_wide' ? 'selected' : ''}>🏢 Company Wide</option>
+            <option value="restricted_assignee" ${vis === 'restricted_assignee' ? 'selected' : ''}>👥 Restricted Assignee</option>
+            <option value="restricted_user" ${vis === 'restricted_user' ? 'selected' : ''}>🔒 Restricted User</option>
+          </select>
         </div>
       </div>
 
@@ -1686,6 +1742,23 @@ function renderItemsGrid(items, container) {
 
 function updateBadgeColor(selectEl) {
   selectEl.className = `status-badge status-${selectEl.value}`;
+}
+
+async function quickUpdateVisibility(id, visibility) {
+  try {
+    const res = await fetch("/api/action_items/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, visibility })
+    });
+    const result = await res.json();
+    if (result.status === "success") {
+      showToast("Permission level updated!");
+      loadActionItems();
+    }
+  } catch (e) {
+    console.error("Save visibility error:", e);
+  }
 }
 
 async function saveItem(id) {
